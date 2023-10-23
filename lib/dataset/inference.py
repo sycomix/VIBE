@@ -39,7 +39,7 @@ class Inference(Dataset):
         self.scale = scale
         self.crop_size = crop_size
         self.frames = frames
-        self.has_keypoints = True if joints2d is not None else False
+        self.has_keypoints = joints2d is not None
 
         self.norm_joints2d = np.zeros_like(self.joints2d)
 
@@ -68,10 +68,7 @@ class Inference(Dataset):
             kp_2d=j2d,
             scale=self.scale,
             crop_size=self.crop_size)
-        if self.has_keypoints:
-            return norm_img, kp_2d
-        else:
-            return norm_img
+        return (norm_img, kp_2d) if self.has_keypoints else norm_img
 
 
 class ImageFolder(Dataset):

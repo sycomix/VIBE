@@ -44,7 +44,7 @@ class MotionDiscriminator(nn.Module):
 
         self.gru = nn.GRU(self.input_size, self.rnn_size, num_layers=num_layers)
 
-        linear_size = self.rnn_size if not feature_pool == "concat" else self.rnn_size * 2
+        linear_size = self.rnn_size if feature_pool != "concat" else self.rnn_size * 2
 
         if feature_pool == "attention" :
             self.attention = SelfAttention(attention_size=self.attention_size,
@@ -68,12 +68,10 @@ class MotionDiscriminator(nn.Module):
             outputs = F.relu(outputs)
             avg_pool = F.adaptive_avg_pool1d(outputs.permute(1, 2, 0), 1).view(batchsize, -1)
             max_pool = F.adaptive_max_pool1d(outputs.permute(1, 2, 0), 1).view(batchsize, -1)
-            output = self.fc(torch.cat([avg_pool, max_pool], dim=1))
+            return self.fc(torch.cat([avg_pool, max_pool], dim=1))
         elif self.feature_pool == "attention":
             outputs = outputs.permute(1, 0, 2)
             y, attentions = self.attention(outputs)
-            output = self.fc(y)
+            return self.fc(y)
         else:
-            output = self.fc(outputs[-1])
-
-        return output
+            return self.fc(outputs[-1])

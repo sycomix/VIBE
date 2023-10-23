@@ -42,8 +42,7 @@ class AMASS(Dataset):
 
     def load_db(self):
         db_file = osp.join(VIBE_DB_DIR, 'amass_db.pt')
-        db = joblib.load(db_file)
-        return db
+        return joblib.load(db_file)
 
     def get_single_item(self, index):
         start_index, end_index = self.vid_indices[index]
@@ -53,10 +52,9 @@ class AMASS(Dataset):
         cam = np.repeat(cam, thetas.shape[0], axis=0)
         theta = np.concatenate([cam, thetas], axis=-1)
 
-        target = {
+        return {
             'theta': torch.from_numpy(theta).float(),  # cam, pose and shape
         }
-        return target
 
 
 

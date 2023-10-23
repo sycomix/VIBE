@@ -76,18 +76,14 @@ class ImageCoder(object):
         return image
 
     def encode_jpeg(self, image):
-        image_data = self._sess.run(
-            self._encode_jpeg, feed_dict={
-                self._encode_jpeg_data: image
-            })
-        return image_data
+        return self._sess.run(
+            self._encode_jpeg, feed_dict={self._encode_jpeg_data: image}
+        )
 
     def encode_png(self, image):
-        image_data = self._sess.run(
-            self._encode_png, feed_dict={
-                self._encode_png_data: image
-            })
-        return image_data
+        return self._sess.run(
+            self._encode_png, feed_dict={self._encode_png_data: image}
+        )
 
     def decode_png(self, image_data):
         image = self._sess.run(
@@ -326,7 +322,7 @@ def read_single_record(fname):
         print(features.shape)
         assert features.shape[0] == N
 
-    for k in dataset.keys():
+    for k in dataset:
         dataset[k] = np.concatenate(dataset[k])
 
     for k,v in dataset.items():
@@ -355,10 +351,10 @@ def concatenate_annotations():
         filename = osp.join(VIBE_DB_DIR, 'insta_parts', f'insta_train_part_{i}.h5')
         print(filename)
         with h5py.File(filename, 'r') as f:
-            for k in ds.keys():
+            for k in ds:
                 ds[k].append(f[k].value)
 
-    for k in ds.keys():
+    for k in ds:
         ds[k] = np.concatenate(ds[k])
 
     print('Saving Insta Variety dataset!..')

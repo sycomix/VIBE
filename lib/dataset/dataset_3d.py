@@ -66,19 +66,12 @@ class Dataset3D(Dataset):
         if self.dataset_name == '3dpw':
             kp_2d = convert_kps(self.db['joints2D'][start_index:end_index + 1], src='common', dst='spin')
             kp_3d = self.db['joints3D'][start_index:end_index + 1]
-        elif self.dataset_name == 'mpii3d':
+        elif self.dataset_name in ['mpii3d', 'h36m']:
             kp_2d = self.db['joints2D'][start_index:end_index + 1]
             if is_train:
                 kp_3d = self.db['joints3D'][start_index:end_index + 1]
             else:
                 kp_3d = convert_kps(self.db['joints3D'][start_index:end_index + 1], src='spin', dst='common')
-        elif self.dataset_name == 'h36m':
-            kp_2d = self.db['joints2D'][start_index:end_index + 1]
-            if is_train:
-                kp_3d = self.db['joints3D'][start_index:end_index + 1]
-            else:
-                kp_3d = convert_kps(self.db['joints3D'][start_index:end_index + 1], src='spin', dst='common')
-
         kp_2d_tensor = np.ones((self.seqlen, 49, 3), dtype=np.float16)
         nj = 14 if not is_train else 49
         kp_3d_tensor = np.zeros((self.seqlen, nj, 3), dtype=np.float16)
@@ -94,12 +87,11 @@ class Dataset3D(Dataset):
                 pose = np.zeros((kp_2d.shape[0], 72))
                 shape = np.zeros((kp_2d.shape[0], 10))
                 w_smpl = torch.zeros(self.seqlen).float()
-                w_3d = torch.ones(self.seqlen).float()
             else:
                 pose = self.db['pose'][start_index:end_index + 1]
                 shape = self.db['shape'][start_index:end_index + 1]
                 w_smpl = torch.ones(self.seqlen).float()
-                w_3d = torch.ones(self.seqlen).float()
+            w_3d = torch.ones(self.seqlen).float()
         elif self.dataset_name == 'mpii3d':
             pose = np.zeros((kp_2d.shape[0], 72))
             shape = np.zeros((kp_2d.shape[0], 10))
@@ -152,21 +144,12 @@ class Dataset3D(Dataset):
 
 
 
-        # if self.dataset_name == '3dpw' and not self.is_train:
-            # target['imgname'] = self.db['img_name'][start_index:end_index+1].tolist()
-            # target['imgname'] = np.array(target['imgname'])
-            # print(target['imgname'].dtype)
-            # target['center'] = self.db['bbox'][start_index:end_index+1, :2]
-            # target['valid'] = torch.from_numpy(self.db['valid'][start_index:end_index+1])
-
         if self.debug:
             from lib.data_utils.img_utils import get_single_image_crop
 
-            if self.dataset_name == 'mpii3d':
+            if self.dataset_name in ['mpii3d', 'h36m']:
                 video = self.db['img_name'][start_index:end_index+1]
                 # print(video)
-            elif self.dataset_name == 'h36m':
-                video = self.db['img_name'][start_index:end_index + 1]
             else:
                 vid_name = self.db['vid_name'][start_index]
                 vid_name = '_'.join(vid_name.split('_')[:-1])

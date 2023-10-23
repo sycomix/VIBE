@@ -32,24 +32,19 @@ class SelfAttention(nn.Module):
 
         self.batch_first = batch_first
 
-        if non_linearity == "relu":
-            activation = nn.ReLU()
-        else:
-            activation = nn.Tanh()
-
+        activation = nn.ReLU() if non_linearity == "relu" else nn.Tanh()
         modules = []
-        for i in range(layers - 1):
-            modules.append(nn.Linear(attention_size, attention_size))
-            modules.append(activation)
-            modules.append(nn.Dropout(dropout))
-
-        # last attention layer must output 1
-        modules.append(nn.Linear(attention_size, 1))
-        modules.append(activation)
-        modules.append(nn.Dropout(dropout))
-
+        for _ in range(layers - 1):
+            modules.extend(
+                (
+                    nn.Linear(attention_size, attention_size),
+                    activation,
+                    nn.Dropout(dropout),
+                )
+            )
+        modules.extend((nn.Linear(attention_size, 1), activation, nn.Dropout(dropout)))
         self.attention = nn.Sequential(*modules)
-        self.attention.apply(init_weights) 
+        self.attention.apply(init_weights)
         self.softmax = nn.Softmax(dim=-1)
 
 

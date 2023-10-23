@@ -121,7 +121,7 @@ class Dataset2D(Dataset):
             f = osp.join(self.folder, vid_folder, vid_name)
             video_file_list = [osp.join(f, x) for x in sorted(os.listdir(f)) if x.endswith('.jpg')]
             frame_idxs = self.db[img_id][start_index:end_index + 1]
-            if self.dataset_name == 'pennaction' or self.dataset_name == 'posetrack':
+            if self.dataset_name in ['pennaction', 'posetrack']:
                 video = frame_idxs
             else:
                 video = [video_file_list[i] for i in frame_idxs]

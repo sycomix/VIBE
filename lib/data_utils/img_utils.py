@@ -40,7 +40,7 @@ def do_augmentation(scale_factor=0.3, color_factor=0.2):
 def trans_point2d(pt_2d, trans):
     src_pt = np.array([pt_2d[0], pt_2d[1], 1.]).T
     dst_pt = np.dot(trans, src_pt)
-    return dst_pt[0:2]
+    return dst_pt[:2]
 
 def rotate_2d(pt_2d, rot_rad):
     x = pt_2d[0]
@@ -78,12 +78,11 @@ def gen_trans_from_patch_cv(c_x, c_y, src_width, src_height, dst_width, dst_heig
     dst[1, :] = dst_center + dst_downdir
     dst[2, :] = dst_center + dst_rightdir
 
-    if inv:
-        trans = cv2.getAffineTransform(np.float32(dst), np.float32(src))
-    else:
-        trans = cv2.getAffineTransform(np.float32(src), np.float32(dst))
-
-    return trans
+    return (
+        cv2.getAffineTransform(np.float32(dst), np.float32(src))
+        if inv
+        else cv2.getAffineTransform(np.float32(src), np.float32(dst))
+    )
 
 def generate_patch_image_cv(cvimg, c_x, c_y, bb_width, bb_height, patch_width, patch_height, do_flip, scale, rot):
     img = cvimg.copy()
@@ -174,8 +173,7 @@ def get_image_crops(image_file, bboxes):
         crop_image = convert_cvimg_to_tensor(crop_image)
         crop_images.append(crop_image)
 
-    batch_image = torch.cat([x.unsqueeze(0) for x in crop_images])
-    return batch_image
+    return torch.cat([x.unsqueeze(0) for x in crop_images])
 
 def get_single_image_crop(image, bbox, scale=1.3):
     if isinstance(image, str):
@@ -295,29 +293,24 @@ def get_bbox_from_kp2d(kp_2d):
     w = h = np.where(w / h > 1, w, h)
     w = h = h * 1.1
 
-    bbox = np.array([c_x, c_y, w, h])  # shape = (4,N)
-    return bbox
+    return np.array([c_x, c_y, w, h])
 
 def normalize_2d_kp(kp_2d, crop_size=224, inv=False):
+    ratio = 1.0 / crop_size
     # Normalize keypoints between -1, 1
-    if not inv:
-        ratio = 1.0 / crop_size
-        kp_2d = 2.0 * kp_2d * ratio - 1.0
-    else:
-        ratio = 1.0 / crop_size
-        kp_2d = (kp_2d + 1.0)/(2*ratio)
-
+    kp_2d = 2.0 * kp_2d * ratio - 1.0 if not inv else (kp_2d + 1.0)/(2*ratio)
     return kp_2d
 
 def get_default_transform():
     normalize = transforms.Normalize(
         mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
     )
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize,
-    ])
-    return transform
+    return transforms.Compose(
+        [
+            transforms.ToTensor(),
+            normalize,
+        ]
+    )
 
 def split_into_chunks(vid_names, seqlen, stride):
     video_start_end_indices = []

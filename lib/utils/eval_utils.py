@@ -95,7 +95,7 @@ def compute_similarity_transform(S1, S2):
     i.e. solves the orthogonal Procrutes problem.
     '''
     transposed = False
-    if S1.shape[0] != 3 and S1.shape[0] != 2:
+    if S1.shape[0] not in [3, 2]:
         S1 = S1.T
         S2 = S2.T
         transposed = True
@@ -146,7 +146,7 @@ def compute_similarity_transform_torch(S1, S2):
     i.e. solves the orthogonal Procrutes problem.
     '''
     transposed = False
-    if S1.shape[0] != 3 and S1.shape[0] != 2:
+    if S1.shape[0] not in [3, 2]:
         S1 = S1.T
         S2 = S2.T
         transposed = True
@@ -204,7 +204,7 @@ def batch_compute_similarity_transform_torch(S1, S2):
     i.e. solves the orthogonal Procrutes problem.
     '''
     transposed = False
-    if S1.shape[0] != 3 and S1.shape[0] != 2:
+    if S1.shape[0] not in [3, 2]:
         S1 = S1.permute(0,2,1)
         S2 = S2.permute(0,2,1)
         transposed = True
@@ -273,7 +273,7 @@ def compute_errors(gt3ds, preds):
       - preds: N x 14 x 3
     """
     errors, errors_pa = [], []
-    for i, (gt3d, pred) in enumerate(zip(gt3ds, preds)):
+    for gt3d, pred in zip(gt3ds, preds):
         gt3d = gt3d.reshape(-1, 3)
         # Root align.
         gt3d = align_by_pelvis(gt3d)

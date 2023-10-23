@@ -62,8 +62,7 @@ def read_data(folder, set):
 
         num_people = -1
         for x in anns['annotations']:
-            if num_people < x['track_id']:
-                num_people = x['track_id']
+            num_people = max(num_people, x['track_id'])
         num_people += 1
         posetrack_joints = get_posetrack_original_kp_names()
         idxs = [anns['categories'][0]['keypoints'].index(h) for h in posetrack_joints if h in anns['categories'][0]['keypoints']]
@@ -75,9 +74,12 @@ def read_data(folder, set):
         tot_frames += num_people * num_frames
         for p_id in range(num_people):
 
-            annot_pid = [(item['keypoints'], item['bbox'], item['image_id'])
-                         for item in anns['annotations']
-                         if item['track_id'] == p_id and not(np.count_nonzero(item['keypoints']) == 0)  ]
+            annot_pid = [
+                (item['keypoints'], item['bbox'], item['image_id'])
+                for item in anns['annotations']
+                if item['track_id'] == p_id
+                and np.count_nonzero(item['keypoints']) != 0
+            ]
 
             if len(annot_pid) < min_frame_number:
                 nn_corrupted += len(annot_pid)
@@ -97,7 +99,7 @@ def read_data(folder, set):
                 img_paths[i] = image_id
                 key2djnts[2::3] = len(key2djnts[2::3])*[1]
 
-                kp_2d[i,:] = np.array(key2djnts).reshape(int(len(key2djnts)/3),3) # [perm_idxs, :]
+                kp_2d[i,:] = np.array(key2djnts).reshape(len(key2djnts) // 3, 3)
                 for kp_loc in kp_2d[i,:]:
                     if kp_loc[0] == 0 and kp_loc[1] == 0:
                         kp_loc[2] = 0
@@ -120,11 +122,11 @@ def read_data(folder, set):
             img_paths = list(img_paths)
             img_paths = [osp.join(folder, frame2imgname[item]) if item != 0 else 0 for item in img_paths ]
 
-            bbx_idxs = []
-            for bbx_id, bbx in enumerate(bbox):
-                if np.count_nonzero(bbx) == 0:
-                    bbx_idxs += [bbx_id]
-
+            bbx_idxs = [
+                bbx_id
+                for bbx_id, bbx in enumerate(bbox)
+                if np.count_nonzero(bbx) == 0
+            ]
             kp_2d = np.delete(kp_2d, bbx_idxs, 0)
             img_paths = np.delete(np.array(img_paths), bbx_idxs, 0)
             bbox = np.delete(bbox, np.where(~bbox.any(axis=1))[0], axis=0)
@@ -157,10 +159,10 @@ def read_data(folder, set):
 
 
     print(nn_corrupted, tot_frames)
-    for k in dataset.keys():
+    for k in dataset:
         dataset[k] = np.array(dataset[k])
 
-    for k in dataset.keys():
+    for k in dataset:
         dataset[k] = np.concatenate(dataset[k])
 
     for k,v in dataset.items():

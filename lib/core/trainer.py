@@ -217,11 +217,13 @@ class Trainer():
             start = time.time()
 
             summary_string = f'({i + 1}/{self.num_iters_per_epoch}) | Total: {bar.elapsed_td} | ' \
-                             f'ETA: {bar.eta_td:} | loss: {losses.avg:.4f}'
+                                 f'ETA: {bar.eta_td:} | loss: {losses.avg:.4f}'
 
             for k, v in loss_dict.items():
                 summary_string += f' | {k}: {v:.2f}'
-                self.writer.add_scalar('train_loss/'+k, v, global_step=self.train_global_step)
+                self.writer.add_scalar(
+                    f'train_loss/{k}', v, global_step=self.train_global_step
+                )
 
             for k,v in timer.items():
                 summary_string += f' | {k}: {v:.2f}'
@@ -243,7 +245,7 @@ class Trainer():
 
             if torch.isnan(total_loss):
                 exit('Nan value in loss, exiting!...')
-            # =======>
+                # =======>
 
         bar.finish()
 

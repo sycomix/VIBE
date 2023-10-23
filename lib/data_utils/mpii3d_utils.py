@@ -19,43 +19,42 @@ from lib.data_utils.feature_extractor import extract_features
 
 
 def read_openpose(json_file, gt_part, dataset):
-    # get only the arms/legs joints
-    op_to_12 = [11, 10, 9, 12, 13, 14, 4, 3, 2, 5, 6, 7]
     # read the openpose detection
     json_data = json.load(open(json_file, 'r'))
     people = json_data['people']
     if len(people) == 0:
         # no openpose detection
-        keyp25 = np.zeros([25,3])
-    else:
-        # size of person in pixels
-        scale = max(max(gt_part[:,0])-min(gt_part[:,0]),max(gt_part[:,1])-min(gt_part[:,1]))
-        # go through all people and find a match
-        dist_conf = np.inf*np.ones(len(people))
-        for i, person in enumerate(people):
-            # openpose keypoints
-            op_keyp25 = np.reshape(person['pose_keypoints_2d'], [25,3])
-            op_keyp12 = op_keyp25[op_to_12, :2]
-            op_conf12 = op_keyp25[op_to_12, 2:3] > 0
+        return np.zeros([25,3])
+    # size of person in pixels
+    scale = max(max(gt_part[:,0])-min(gt_part[:,0]),max(gt_part[:,1])-min(gt_part[:,1]))
+    # go through all people and find a match
+    dist_conf = np.inf*np.ones(len(people))
+    # get only the arms/legs joints
+    op_to_12 = [11, 10, 9, 12, 13, 14, 4, 3, 2, 5, 6, 7]
+    for i, person in enumerate(people):
+        # openpose keypoints
+        op_keyp25 = np.reshape(person['pose_keypoints_2d'], [25,3])
+        op_conf12 = op_keyp25[op_to_12, 2:3] > 0
             # all the relevant joints should be detected
-            if min(op_conf12) > 0:
-                # weighted distance of keypoints
-                dist_conf[i] = np.mean(np.sqrt(np.sum(op_conf12*(op_keyp12 - gt_part[:12, :2])**2, axis=1)))
-        # closest match
-        p_sel = np.argmin(dist_conf)
+        if min(op_conf12) > 0:
+            op_keyp12 = op_keyp25[op_to_12, :2]
+            # weighted distance of keypoints
+            dist_conf[i] = np.mean(np.sqrt(np.sum(op_conf12*(op_keyp12 - gt_part[:12, :2])**2, axis=1)))
+    # closest match
+    p_sel = np.argmin(dist_conf)
         # the exact threshold is not super important but these are the values we used
-        if dataset == 'mpii':
-            thresh = 30
-        elif dataset == 'coco':
-            thresh = 10
-        else:
-            thresh = 0
+    if dataset == 'coco':
+        thresh = 10
+    elif dataset == 'mpii':
+        thresh = 30
+    else:
+        thresh = 0
         # dataset-specific thresholding based on pixel size of person
-        if min(dist_conf)/scale > 0.1 and min(dist_conf) < thresh:
-            keyp25 = np.zeros([25,3])
-        else:
-            keyp25 = np.reshape(people[p_sel]['pose_keypoints_2d'], [25,3])
-    return keyp25
+    return (
+        np.zeros([25, 3])
+        if min(dist_conf) / scale > 0.1 and min(dist_conf) < thresh
+        else np.reshape(people[p_sel]['pose_keypoints_2d'], [25, 3])
+    )
 
 
 def read_calibration(calib_file, vid_list):
@@ -99,9 +98,7 @@ def read_data_train(dataset_path, debug=False):
 
     for user_i in user_list:
         for seq_i in seq_list:
-            seq_path = os.path.join(dataset_path,
-                                    'S' + str(user_i),
-                                    'Seq' + str(seq_i))
+            seq_path = os.path.join(dataset_path, f'S{str(user_i)}', f'Seq{str(seq_i)}')
             # mat file with annotations
             annot_file = os.path.join(seq_path, 'annot.mat')
             annot2 = sio.loadmat(annot_file)['annot2']
@@ -109,8 +106,7 @@ def read_data_train(dataset_path, debug=False):
             # calibration file and camera parameters
             for j, vid_i in enumerate(vid_list):
                 # image folder
-                imgs_path = os.path.join(seq_path,
-                                         'video_' + str(vid_i))
+                imgs_path = os.path.join(seq_path, f'video_{str(vid_i)}')
                 # per frame
                 pattern = os.path.join(imgs_path, '*.jpg')
                 img_list = sorted(glob.glob(pattern))
@@ -118,7 +114,7 @@ def read_data_train(dataset_path, debug=False):
                 vid_used_joints = []
                 vid_used_bbox = []
                 vid_segments = []
-                vid_uniq_id = "subj" + str(user_i) + '_seq' + str(seq_i) + "_vid" + str(vid_i) + "_seg0"
+                vid_uniq_id = f"subj{str(user_i)}_seq{str(seq_i)}_vid{str(vid_i)}_seg0"
                 for i, img_i in tqdm_enumerate(img_list):
 
                     # for each image we store the relevant annotations
@@ -191,7 +187,7 @@ def read_data_train(dataset_path, debug=False):
                                                 dataset='spin', debug=False)
                     dataset['features'].append(features)
 
-    for k in dataset.keys():
+    for k in dataset:
         dataset[k] = np.array(dataset[k])
     dataset['features'] = np.concatenate(dataset['features'])
 
@@ -217,9 +213,9 @@ def read_test_data(dataset_path):
 
     for user_i in user_list:
         print('Subject', user_i)
-        seq_path = os.path.join(dataset_path,
-                                'mpi_inf_3dhp_test_set',
-                                'TS' + str(user_i))
+        seq_path = os.path.join(
+            dataset_path, 'mpi_inf_3dhp_test_set', f'TS{str(user_i)}'
+        )
         # mat file with annotations
         annot_file = os.path.join(seq_path, 'annot_data.mat')
         mat_as_h5 = h5py.File(annot_file, 'r')
@@ -231,15 +227,17 @@ def read_test_data(dataset_path):
         vid_used_joints = []
         vid_used_bbox = []
         vid_segments = []
-        vid_uniq_id = "subj" + str(user_i) + "_seg0"
+        vid_uniq_id = f"subj{str(user_i)}_seg0"
 
 
         for frame_i, valid_i in tqdm(enumerate(valid)):
 
-            img_i = os.path.join('mpi_inf_3dhp_test_set',
-                                    'TS' + str(user_i),
-                                    'imageSequence',
-                                    'img_' + str(frame_i + 1).zfill(6) + '.jpg')
+            img_i = os.path.join(
+                'mpi_inf_3dhp_test_set',
+                f'TS{str(user_i)}',
+                'imageSequence',
+                f'img_{str(frame_i + 1).zfill(6)}.jpg',
+            )
 
             joints_2d_raw = np.expand_dims(annot2[frame_i, 0, :, :], axis = 0)
             joints_2d_raw = np.append(joints_2d_raw, np.ones((1, 17, 1)), axis=2)
@@ -317,7 +315,7 @@ def read_test_data(dataset_path):
                                         dataset='spin', debug=False)
             dataset['features'].append(features)
 
-    for k in dataset.keys():
+    for k in dataset:
         dataset[k] = np.array(dataset[k])
     dataset['features'] = np.concatenate(dataset['features'])
 

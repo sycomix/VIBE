@@ -40,8 +40,7 @@ def convert_kps(joints2d, src, dst):
 def get_perm_idxs(src, dst):
     src_names = eval(f'get_{src}_joint_names')()
     dst_names = eval(f'get_{dst}_joint_names')()
-    idxs = [src_names.index(h) for h in dst_names if h in src_names]
-    return idxs
+    return [src_names.index(h) for h in dst_names if h in src_names]
 
 def get_mpii3d_test_joint_names():
     return [

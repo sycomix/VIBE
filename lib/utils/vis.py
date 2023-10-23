@@ -54,7 +54,7 @@ class WeakPerspectiveCamera(pyrender.Camera):
 
 
 def get_colors():
-    colors = {
+    return {
         'pink': np.array([197, 27, 125]),  # L lower leg
         'light_pink': np.array([233, 163, 201]),  # L upper leg
         'light_green': np.array([161, 215, 106]),  # L lower arm
@@ -69,7 +69,6 @@ def get_colors():
         'gray': np.array([130, 130, 130]),  #
         'white': np.array([255, 255, 255]),  #
     }
-    return colors
 
 
 def render_image(img, verts, cam, faces=None, angle=None, axis=None, resolution=224, output_fn=None):
@@ -271,12 +270,11 @@ def visualize_preds(image, preds, target=None, target_exists=True, dataset='comm
         axis=[0,1,0]
     )
 
-    if target_exists:
-        result_image = np.hstack([image, pred_image, target_image, render, render_side])
-    else:
-        result_image = np.hstack([image, pred_image, render, render_side])
-
-    return result_image
+    return (
+        np.hstack([image, pred_image, target_image, render, render_side])
+        if target_exists
+        else np.hstack([image, pred_image, render, render_side])
+    )
 
 
 def batch_visualize_preds(images, preds, target=None, max_images=16, idxs=None,
@@ -301,14 +299,9 @@ def batch_visualize_preds(images, preds, target=None, max_images=16, idxs=None,
     indexes = range(max_images) if idxs is None else idxs
 
     for idx in indexes:
-        single_pred = {}
-        for k, v in preds.items():
-            single_pred[k] = v[idx]
-
+        single_pred = {k: v[idx] for k, v in preds.items()}
         if target_exists:
-            single_target = {}
-            for k, v in target.items():
-                single_target[k] = v[idx]
+            single_target = {k: v[idx] for k, v in target.items()}
         else:
             single_target = None
 
@@ -316,9 +309,7 @@ def batch_visualize_preds(images, preds, target=None, max_images=16, idxs=None,
                               dataset=dataset)
         result_images.append(img)
 
-    result_image = np.vstack(result_images)
-
-    return result_image
+    return np.vstack(result_images)
 
 
 def batch_visualize_vid_preds(video, preds, target, max_video=4, vis_hmr=False, dataset='common'):
@@ -353,14 +344,8 @@ def batch_visualize_vid_preds(video, preds, target, max_video=4, vis_hmr=False, 
 
         for t_id in range(tsize):
             image = video[batch_id, t_id]
-            single_pred = {}
-            single_target = {}
-            for k, v in preds.items():
-                single_pred[k] = v[batch_id, t_id]
-
-            for k, v in target.items():
-                single_target[k] = v[batch_id, t_id]
-
+            single_pred = {k: v[batch_id, t_id] for k, v in preds.items()}
+            single_target = {k: v[batch_id, t_id] for k, v in target.items()}
             img = visualize_preds(image, single_pred, single_target,
                                   vis_hmr=vis_hmr, dataset=dataset)
 
@@ -389,7 +374,7 @@ def draw_skeleton(image, kp_2d, dataset='common', unnormalize=True, thickness=2)
 
     skeleton = eval(f'kp_utils.get_{dataset}_skeleton')()
     common_lr = [0,0,1,1,0,0,0,0,1,0,0,1,1,1,0]
-    for idx,pt in enumerate(kp_2d):
+    for pt in kp_2d:
         if pt[2] > 0: # if visible
             cv2.circle(image, (pt[0], pt[1]), 4, pcolor, -1)
             # cv2.putText(image, f'{idx}', (pt[0]+1, pt[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.3, (0, 255, 0))
@@ -420,19 +405,13 @@ def batch_draw_skeleton(images, target, max_images=8, dataset='common'):
     result_images = []
 
     for idx in range(max_images):
-        single_target = {}
-
-        for k, v in target.items():
-            single_target[k] = v[idx]
-
+        single_target = {k: v[idx] for k, v in target.items()}
         img = torch2numpy(images[idx])
 
         img = draw_skeleton(img.copy(), single_target['kp_2d'], dataset=dataset)
         result_images.append(img)
 
-    result_image = np.vstack(result_images)
-
-    return result_image
+    return np.vstack(result_images)
 
 
 def get_regressor_output(features):

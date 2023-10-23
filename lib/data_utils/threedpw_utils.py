@@ -61,12 +61,12 @@ def read_data(folder, set, debug=False):
     J_regressor = None
 
     smpl = SMPL(SMPL_MODEL_DIR, batch_size=1, create_transl=False)
-    if set == 'test' or set == 'validation':
+    if set in ['test', 'validation']:
         J_regressor = torch.from_numpy(np.load(osp.join(VIBE_DATA_DIR, 'J_regressor_h36m.npy'))).float()
 
     for i, seq in tqdm(enumerate(sequences)):
 
-        data_file = osp.join(folder, 'sequenceFiles', set, seq + '.pkl')
+        data_file = osp.join(folder, 'sequenceFiles', set, f'{seq}.pkl')
 
         data = pkl.load(open(data_file, 'rb'), encoding='latin1')
 
@@ -145,13 +145,13 @@ def read_data(folder, set, debug=False):
                                         kp_2d=j2d[time_pt1:time_pt2], debug=debug, dataset='3dpw', scale=1.2)
             dataset['features'].append(features)
 
-    for k in dataset.keys():
+    for k, v in dataset.items():
         dataset[k] = np.concatenate(dataset[k])
-        print(k, dataset[k].shape)
+        print(k, v.shape)
 
     # Filter out keypoints
     indices_to_use = np.where((dataset['joints2D'][:, :, 2] > VIS_THRESH).sum(-1) > MIN_KP)[0]
-    for k in dataset.keys():
+    for k in dataset:
         dataset[k] = dataset[k][indices_to_use]
 
     return dataset

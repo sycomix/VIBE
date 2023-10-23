@@ -37,8 +37,6 @@ for i, target in enumerate(dataloader):
 
         if dataset == 'MPII3D':
             images = batch_draw_skeleton(input, single_target, dataset='spin', max_images=4)
-            plt.imshow(images)
-            plt.show()
         else:
             theta = single_target['theta']
             pose, shape = theta[:, 3:75], theta[:, 75:]
@@ -50,9 +48,7 @@ for i, target in enumerate(dataloader):
             single_target['verts'] = pred_output.vertices
 
             images = batch_visualize_preds(input, single_target, single_target, max_images=4, dataset='spin')
-            # images = batch_draw_skeleton(input, single_target, dataset='common', max_images=10)
-            plt.imshow(images)
-            plt.show()
-
+        plt.imshow(images)
+        plt.show()
     if i == 100:
         break

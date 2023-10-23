@@ -125,9 +125,5 @@ def parse_args():
     print(args, end='\n\n')
 
     cfg_file = args.cfg
-    if args.cfg is not None:
-        cfg = update_cfg(args.cfg)
-    else:
-        cfg = get_cfg_defaults()
-
+    cfg = update_cfg(args.cfg) if args.cfg is not None else get_cfg_defaults()
     return cfg, cfg_file

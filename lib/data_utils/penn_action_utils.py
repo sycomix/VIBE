@@ -71,11 +71,17 @@ def read_data(folder):
 
     model = spin.get_pretrained_hmr()
 
-    file_names = sorted(glob.glob(folder + '/labels/'+'*.mat'))
+    file_names = sorted(glob.glob(f'{folder}/labels/*.mat'))
 
     for fname in tqdm(file_names):
         vid_dict=load_mat(fname)
-        imgs = sorted(glob.glob(folder + '/frames/'+ fname.strip().split('/')[-1].split('.')[0]+'/*.jpg'))
+        imgs = sorted(
+            glob.glob(
+                f'{folder}/frames/'
+                + fname.strip().split('/')[-1].split('.')[0]
+                + '/*.jpg'
+            )
+        )
         kp_2d = np.zeros((vid_dict['nframes'], 13, 3))
         perm_idxs = get_perm_idxs('pennaction', 'common')
 
@@ -109,9 +115,9 @@ def read_data(folder):
         features = extract_features(model, np.array(imgs) , bbox, dataset='pennaction', debug=False)
         dataset['features'].append(features)
 
-    for k in dataset.keys():
+    for k in dataset:
         dataset[k] = np.array(dataset[k])
-    for k in dataset.keys():
+    for k in dataset:
         dataset[k] = np.concatenate(dataset[k])
 
     return dataset

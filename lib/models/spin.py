@@ -116,12 +116,9 @@ class HMR(nn.Module):
                 nn.BatchNorm2d(planes * block.expansion),
             )
 
-        layers = []
-        layers.append(block(self.inplanes, planes, stride, downsample))
+        layers = [block(self.inplanes, planes, stride, downsample)]
         self.inplanes = planes * block.expansion
-        for i in range(1, blocks):
-            layers.append(block(self.inplanes, planes))
-
+        layers.extend(block(self.inplanes, planes) for _ in range(1, blocks))
         return nn.Sequential(*layers)
 
     def feature_extractor(self, x):
@@ -167,7 +164,7 @@ class HMR(nn.Module):
         pred_pose = init_pose
         pred_shape = init_shape
         pred_cam = init_cam
-        for i in range(n_iter):
+        for _ in range(n_iter):
             xc = torch.cat([xf, pred_pose, pred_shape, pred_cam], 1)
             xc = self.fc1(xc)
             xc = self.drop1(xc)
@@ -200,10 +197,7 @@ class HMR(nn.Module):
             'kp_3d': pred_joints,
         }]
 
-        if return_features:
-            return xf, output
-        else:
-            return output
+        return (xf, output) if return_features else output
 
 
 class Regressor(nn.Module):
@@ -252,7 +246,7 @@ class Regressor(nn.Module):
         pred_pose = init_pose
         pred_shape = init_shape
         pred_cam = init_cam
-        for i in range(n_iter):
+        for _ in range(n_iter):
             xc = torch.cat([x, pred_pose, pred_shape, pred_cam], 1)
             xc = self.fc1(xc)
             xc = self.drop1(xc)
@@ -283,14 +277,15 @@ class Regressor(nn.Module):
 
         pose = rotation_matrix_to_angle_axis(pred_rotmat.reshape(-1, 3, 3)).reshape(-1, 72)
 
-        output = [{
-            'theta'  : torch.cat([pred_cam, pose, pred_shape], dim=1),
-            'verts'  : pred_vertices,
-            'kp_2d'  : pred_keypoints_2d,
-            'kp_3d'  : pred_joints,
-            'rotmat' : pred_rotmat
-        }]
-        return output
+        return [
+            {
+                'theta': torch.cat([pred_cam, pose, pred_shape], dim=1),
+                'verts': pred_vertices,
+                'kp_2d': pred_keypoints_2d,
+                'kp_3d': pred_joints,
+                'rotmat': pred_rotmat,
+            }
+        ]
 
 
 def hmr(smpl_mean_params=SMPL_MEAN_PARAMS, pretrained=True, **kwargs):

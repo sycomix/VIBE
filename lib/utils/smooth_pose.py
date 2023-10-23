@@ -39,17 +39,13 @@ def smooth_pose(pred_pose, pred_betas, min_cutoff=0.004, beta=0.7):
     # initialize
     pred_pose_hat[0] = pred_pose[0]
 
-    pred_verts_hat = []
-    pred_joints3d_hat = []
-
     smpl_output = smpl(
         betas=torch.from_numpy(pred_betas[0]).unsqueeze(0),
         body_pose=torch.from_numpy(pred_pose[0, 1:]).unsqueeze(0),
         global_orient=torch.from_numpy(pred_pose[0, 0:1]).unsqueeze(0),
     )
-    pred_verts_hat.append(smpl_output.vertices.detach().cpu().numpy())
-    pred_joints3d_hat.append(smpl_output.joints.detach().cpu().numpy())
-
+    pred_verts_hat = [smpl_output.vertices.detach().cpu().numpy()]
+    pred_joints3d_hat = [smpl_output.joints.detach().cpu().numpy()]
     for idx, pose in enumerate(pred_pose[1:]):
         idx += 1
 

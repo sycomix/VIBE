@@ -158,24 +158,37 @@ def smplify_runner(
     new_opt_betas = output['theta'][:,75:]
     new_opt_joints3d = output['kp_3d']
 
-    return_val = [
-        update, new_opt_vertices.cpu(), new_opt_cam_t.cpu(),
-        new_opt_pose.cpu(), new_opt_betas.cpu(), new_opt_joints3d.cpu(),
-        new_opt_joint_loss, opt_joint_loss,
+    return [
+        update,
+        new_opt_vertices.cpu(),
+        new_opt_cam_t.cpu(),
+        new_opt_pose.cpu(),
+        new_opt_betas.cpu(),
+        new_opt_joints3d.cpu(),
+        new_opt_joint_loss,
+        opt_joint_loss,
     ]
-
-    return return_val
 
 
 def trim_videos(filename, start_time, end_time, output_filename):
-    command = ['ffmpeg',
-               '-i', '"%s"' % filename,
-               '-ss', str(start_time),
-               '-t', str(end_time - start_time),
-               '-c:v', 'libx264', '-c:a', 'copy',
-               '-threads', '1',
-               '-loglevel', 'panic',
-               '"%s"' % output_filename]
+    command = [
+        'ffmpeg',
+        '-i',
+        f'"{filename}"',
+        '-ss',
+        str(start_time),
+        '-t',
+        str(end_time - start_time),
+        '-c:v',
+        'libx264',
+        '-c:a',
+        'copy',
+        '-threads',
+        '1',
+        '-loglevel',
+        'panic',
+        f'"{output_filename}"',
+    ]
     # command = ' '.join(command)
     subprocess.call(command)
 
@@ -216,14 +229,11 @@ def download_ckpt(outdir='data/vibe_data', use_3dpw=False):
     if use_3dpw:
         ckpt_file = 'data/vibe_data/vibe_model_w_3dpw.pth.tar'
         url = 'https://www.dropbox.com/s/41ozgqorcp095ja/vibe_model_w_3dpw.pth.tar'
-        if not os.path.isfile(ckpt_file):
-            download_url(url=url, outdir=outdir)
     else:
         ckpt_file = 'data/vibe_data/vibe_model_wo_3dpw.pth.tar'
         url = 'https://www.dropbox.com/s/amj2p8bmf6g56k6/vibe_model_wo_3dpw.pth.tar'
-        if not os.path.isfile(ckpt_file):
-            download_url(url=url, outdir=outdir)
-
+    if not os.path.isfile(ckpt_file):
+        download_url(url=url, outdir=outdir)
     return ckpt_file
 
 
@@ -255,8 +265,7 @@ def convert_crop_cam_to_orig_img(cam, bbox, img_width, img_height):
     sy = cam[:,0] * (1. / (img_height / h))
     tx = ((cx - hw) / hw / sx) + cam[:,1]
     ty = ((cy - hh) / hh / sy) + cam[:,2]
-    orig_cam = np.stack([sx, sy, tx, ty]).T
-    return orig_cam
+    return np.stack([sx, sy, tx, ty]).T
 
           
 def convert_crop_coords_to_orig_img(bbox, keypoints, crop_size):

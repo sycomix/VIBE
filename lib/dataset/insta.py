@@ -67,10 +67,10 @@ class Insta(Dataset):
             kp_2d[idx,:,:2] = normalize_2d_kp(kp_2d[idx,:,:2], 224)
             kp_2d_tensor[idx] = kp_2d[idx]
 
-        target = {
+        return {
             'features': input,
-            'kp_2d': torch.from_numpy(kp_2d_tensor).float(), # 2D keypoints transformed according to bbox cropping
+            'kp_2d': torch.from_numpy(
+                kp_2d_tensor
+            ).float(),  # 2D keypoints transformed according to bbox cropping
             # 'instance_id': instance_id
         }
-
-        return target

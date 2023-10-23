@@ -110,11 +110,7 @@ def setup_scene(model_path, fps_target):
 # Process single pose into keyframed bone orientations
 def process_pose(current_frame, pose, trans, pelvis_position):
 
-    if pose.shape[0] == 72:
-        rod_rots = pose.reshape(24, 3)
-    else:
-        rod_rots = pose.reshape(26, 3)
-
+    rod_rots = pose.reshape(24, 3) if pose.shape[0] == 72 else pose.reshape(26, 3)
     mat_rots = [Rodrigues(rod_rot) for rod_rot in rod_rots]
 
     # Set the location of the Pelvis bone to the translation parameter
@@ -160,7 +156,7 @@ def process_poses(
         person_id=1,
 ):
 
-    print('Processing: ' + input_path)
+    print(f'Processing: {input_path}')
 
     data = joblib.load(input_path)
     poses = data[person_id]['pose']
@@ -169,19 +165,17 @@ def process_poses(
     if gender == 'female':
         model_path = female_model_path
         for k,v in bone_name_from_index.items():
-            bone_name_from_index[k] = 'f_avg_' + v
+            bone_name_from_index[k] = f'f_avg_{v}'
     elif gender == 'male':
         model_path = male_model_path
         for k,v in bone_name_from_index.items():
-            bone_name_from_index[k] = 'm_avg_' + v
+            bone_name_from_index[k] = f'm_avg_{v}'
     else:
-        print('ERROR: Unsupported gender: ' + gender)
+        print(f'ERROR: Unsupported gender: {gender}')
         sys.exit(1)
 
     # Limit target fps to source fps
-    if fps_target > fps_source:
-        fps_target = fps_source
-
+    fps_target = min(fps_target, fps_source)
     print(f'Gender: {gender}')
     print(f'Number of source poses: {str(poses.shape[0])}')
     print(f'Source frames-per-second: {str(fps_source)}')
@@ -207,7 +201,7 @@ def process_poses(
     offset = np.array([0.0, 0.0, 0.0])
 
     while source_index < poses.shape[0]:
-        print('Adding pose: ' + str(source_index))
+        print(f'Adding pose: {source_index}')
 
         if start_origin:
             if source_index == 0:
@@ -242,7 +236,7 @@ def export_animated_mesh(output_path):
         print('Exporting to FBX binary (.fbx)')
         bpy.ops.export_scene.fbx(filepath=output_path, use_selection=True, add_leaf_bones=False)
     else:
-        print('ERROR: Unsupported export format: ' + output_path)
+        print(f'ERROR: Unsupported export format: {output_path}')
         sys.exit(1)
 
     return
@@ -298,8 +292,8 @@ if __name__ == '__main__':
         if not output_path.startswith(os.path.sep):
             output_path = os.path.join(cwd, output_path)
 
-        print('Input path: ' + input_path)
-        print('Output path: ' + output_path)
+        print(f'Input path: {input_path}')
+        print(f'Output path: {output_path}')
 
         if not (output_path.endswith('.fbx') or output_path.endswith('.glb')):
             print('ERROR: Invalid output format (must be .fbx or .glb)')
@@ -329,12 +323,8 @@ if __name__ == '__main__':
         sys.exit(0)
 
     except SystemExit as ex:
-        if ex.code is None:
-            exit_status = 0
-        else:
-            exit_status = ex.code
-
-        print('Exiting. Exit status: ' + str(exit_status))
+        exit_status = 0 if ex.code is None else ex.code
+        print(f'Exiting. Exit status: {str(exit_status)}')
 
         # Only exit to OS when we are not running in Blender GUI
         if bpy.app.background:

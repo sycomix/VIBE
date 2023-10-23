@@ -155,8 +155,12 @@ class VIBELoss(nn.Module):
         conf = gt_keypoints_2d[:, :, -1].unsqueeze(-1).clone()
         conf[:, :25] *= openpose_weight
         conf[:, 25:] *= gt_weight
-        loss = (conf * self.criterion_keypoints(pred_keypoints_2d, gt_keypoints_2d[:, :, :-1])).mean()
-        return loss
+        return (
+            conf
+            * self.criterion_keypoints(
+                pred_keypoints_2d, gt_keypoints_2d[:, :, :-1]
+            )
+        ).mean()
 
     def keypoint_3d_loss(self, pred_keypoints_3d, gt_keypoints_3d):
         """

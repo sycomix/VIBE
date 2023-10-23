@@ -35,7 +35,7 @@ def extract_features(model, video, bbox, debug=False, batch_size=200, kp_2d=None
     '''
     device = 'cuda'
 
-    if isinstance(video, torch.Tensor) or isinstance(video, np.ndarray):
+    if isinstance(video, (torch.Tensor, np.ndarray)):
         video = video
     elif isinstance(video, str):
         if os.path.isfile(video):

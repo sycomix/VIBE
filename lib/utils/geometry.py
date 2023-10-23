@@ -56,13 +56,20 @@ def quat2mat(quat):
     wx, wy, wz = w * x, w * y, w * z
     xy, xz, yz = x * y, x * z, y * z
 
-    rotMat = torch.stack([
-        w2 + x2 - y2 - z2, 2 * xy - 2 * wz, 2 * wy + 2 * xz, 2 * wz + 2 * xy,
-        w2 - x2 + y2 - z2, 2 * yz - 2 * wx, 2 * xz - 2 * wy, 2 * wx + 2 * yz,
-        w2 - x2 - y2 + z2
-    ],
-                         dim=1).view(batch_size, 3, 3)
-    return rotMat
+    return torch.stack(
+        [
+            w2 + x2 - y2 - z2,
+            2 * xy - 2 * wz,
+            2 * wy + 2 * xz,
+            2 * wz + 2 * xy,
+            w2 - x2 + y2 - z2,
+            2 * yz - 2 * wx,
+            2 * xz - 2 * wy,
+            2 * wx + 2 * yz,
+            w2 - x2 - y2 + z2,
+        ],
+        dim=1,
+    ).view(batch_size, 3, 3)
 
 
 def rotation_matrix_to_angle_axis(rotation_matrix):
@@ -120,12 +127,12 @@ def quaternion_to_angle_axis(quaternion: torch.Tensor) -> torch.Tensor:
         >>> angle_axis = tgm.quaternion_to_angle_axis(quaternion)  # Nx3
     """
     if not torch.is_tensor(quaternion):
-        raise TypeError("Input type is not a torch.Tensor. Got {}".format(
-            type(quaternion)))
+        raise TypeError(f"Input type is not a torch.Tensor. Got {type(quaternion)}")
 
-    if not quaternion.shape[-1] == 4:
-        raise ValueError("Input must be a tensor of shape Nx4 or 4. Got {}"
-                         .format(quaternion.shape))
+    if quaternion.shape[-1] != 4:
+        raise ValueError(
+            f"Input must be a tensor of shape Nx4 or 4. Got {quaternion.shape}"
+        )
     # unpack input and compute conversion
     q1: torch.Tensor = quaternion[..., 1]
     q2: torch.Tensor = quaternion[..., 2]
@@ -174,17 +181,18 @@ def rotation_matrix_to_quaternion(rotation_matrix, eps=1e-6):
         >>> output = tgm.rotation_matrix_to_quaternion(input)  # Nx4
     """
     if not torch.is_tensor(rotation_matrix):
-        raise TypeError("Input type is not a torch.Tensor. Got {}".format(
-            type(rotation_matrix)))
+        raise TypeError(
+            f"Input type is not a torch.Tensor. Got {type(rotation_matrix)}"
+        )
 
     if len(rotation_matrix.shape) > 3:
         raise ValueError(
-            "Input size must be a three dimensional tensor. Got {}".format(
-                rotation_matrix.shape))
-    if not rotation_matrix.shape[-2:] == (3, 4):
+            f"Input size must be a three dimensional tensor. Got {rotation_matrix.shape}"
+        )
+    if rotation_matrix.shape[-2:] != (3, 4):
         raise ValueError(
-            "Input size must be a N x 3 x 4  tensor. Got {}".format(
-                rotation_matrix.shape))
+            f"Input size must be a N x 3 x 4  tensor. Got {rotation_matrix.shape}"
+        )
 
     rmat_t = torch.transpose(rotation_matrix, 1, 2)
 
@@ -271,10 +279,7 @@ def estimate_translation_np(S, joints_2d, joints_conf, focal_length=5000., img_s
     A = np.dot(Q.T,Q)
     b = np.dot(Q.T,c)
 
-    # solution
-    trans = np.linalg.solve(A, b)
-
-    return trans
+    return np.linalg.solve(A, b)
 
 
 def estimate_translation(S, joints_2d, focal_length=5000., img_size=224.):
@@ -339,6 +344,4 @@ def rot6d_to_rotmat(x):
 
     # Finish building the basis by taking the cross product
     b3 = torch.cross(b1, b2, dim=1)
-    rot_mats = torch.stack([b1, b2, b3], dim=-1)
-
-    return rot_mats
+    return torch.stack([b1, b2, b3], dim=-1)

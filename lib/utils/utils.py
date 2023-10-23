@@ -30,10 +30,7 @@ from typing import List, Union
 def move_dict_to_device(dict, device, tensor2float=False):
     for k,v in dict.items():
         if isinstance(v, torch.Tensor):
-            if tensor2float:
-                dict[k] = v.float().to(device)
-            else:
-                dict[k] = v.to(device)
+            dict[k] = v.float().to(device) if tensor2float else v.to(device)
 
 
 def get_from_dict(dict, keys):
@@ -41,10 +38,7 @@ def get_from_dict(dict, keys):
 
 
 def tqdm_enumerate(iter):
-    i = 0
-    for y in tqdm(iter):
-        yield i, y
-        i += 1
+    yield from enumerate(tqdm(iter))
 
 
 def iterdict(d):
